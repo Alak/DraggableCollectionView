@@ -244,9 +244,9 @@ typedef NS_ENUM(NSInteger, _ScrollingDirection) {
 			if ([self.collectionView.dataSource respondsToSelector:@selector(collectionView:transformForDraggingItemAtIndexPath:duration:)]) {
 				NSTimeInterval duration = 0.3;
 				CGAffineTransform transform = [(id<UICollectionViewDataSource_Draggable>)self.collectionView.dataSource collectionView:self.collectionView transformForDraggingItemAtIndexPath:indexPath duration:&duration];
-				[UIView animateWithDuration:duration animations:^{
-					mockCell.transform = transform;
-				} completion:nil];
+                [UIView animateWithDuration:duration delay:0 usingSpringWithDamping:0.5 initialSpringVelocity:10.0 options:0 animations:^{
+                    mockCell.transform = transform;
+                } completion:nil];
 			}
             
             // Start warping
@@ -266,9 +266,21 @@ typedef NS_ENUM(NSInteger, _ScrollingDirection) {
 																				 moveItemAtIndexPath:self.layoutHelper.fromIndexPath
 																						 toIndexPath:self.layoutHelper.toIndexPath];
             
+            NSMutableArray *indexPaths = [NSMutableArray array];
+            if (self.layoutHelper.fromIndexPath.item > self.layoutHelper.toIndexPath.item) {
+                for (NSInteger i = self.layoutHelper.toIndexPath.item; i <= self.layoutHelper.fromIndexPath.item; i++) {
+                    [indexPaths addObject: [NSIndexPath indexPathForItem:i inSection:0]];
+                }
+            } else {
+                for (NSInteger i = self.layoutHelper.fromIndexPath.item; i <= self.layoutHelper.toIndexPath.item; i++) {
+                    [indexPaths addObject: [NSIndexPath indexPathForItem:i inSection:0]];
+                }
+            }
             // Move the item
             [self.collectionView performBatchUpdates:^{
                 [self.collectionView moveItemAtIndexPath:self.layoutHelper.fromIndexPath toIndexPath:self.layoutHelper.toIndexPath];
+                [self.collectionView reloadItemsAtIndexPaths:indexPaths];
+                
                 self.layoutHelper.fromIndexPath = nil;
                 self.layoutHelper.toIndexPath = nil;
             } completion:nil];
@@ -280,6 +292,7 @@ typedef NS_ENUM(NSInteger, _ScrollingDirection) {
              animations:^{
                  mockCell.center = layoutAttributes.center;
                  mockCell.transform = CGAffineTransformMakeScale(1.f, 1.f);
+                 mockCell.alpha = 0;
              }
              completion:^(BOOL finished) {
                  [mockCell removeFromSuperview];
